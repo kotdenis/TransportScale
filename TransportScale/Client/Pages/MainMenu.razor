@@ -1,0 +1,44 @@
+﻿@page "/"
+@layout MainLayout
+
+@using TransportScale.Dto.DtoModels
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm">
+      <div style="background-color: #2F4F4F;margin: 10px;min-height: 550px">
+
+      </div>
+    </div>
+    <div class="col-sm">
+      <MainMenuWeighing CarBrand="@transportDto.Name" CarPlate="@transportDto.Number" Weight="CurrentWeight" 
+        ImportedCargo="@transportDto.Cargo" AcceptCarAsync="@AcceptCarAsync" BeginWeighingAsync="@BeginWeighingAsync" SaveWeighingAsync="@SaveWeighingAsync"></MainMenuWeighing>
+    </div>
+    <div class="col-sm">
+      Одна из трёх колонок
+    </div>
+  </div>
+</div>
+
+@code {
+
+    private TransportDto transportDto = new TransportDto { Name = "", AxisNumber = 0, Cargo = "", Number = "", Weight = 0 };
+    private int TotalWeight { get; set; }
+    private int CurrentWeight { get; set; } = 0;
+
+    private async Task AcceptCarAsync()
+    {
+
+    }
+
+    private async Task BeginWeighingAsync()
+    {
+
+    }
+
+    private async Task SaveWeighingAsync()
+    {
+        
+    }
+
+}

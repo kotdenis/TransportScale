@@ -1,4 +1,4 @@
-﻿namespace TransportScalesBlazor.Entity.Entities
+﻿namespace TransportScale.Entity.Entities
 {
     public class Transport : BaseEntity
     {

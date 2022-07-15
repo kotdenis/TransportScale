@@ -19,4 +19,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TransportScale.Dto\TransportScale.Dto.csproj" />
+    <ProjectReference Include="..\TransportScale.Entity\TransportScale.Entity.csproj" />
+  </ItemGroup>
+
 </Project>

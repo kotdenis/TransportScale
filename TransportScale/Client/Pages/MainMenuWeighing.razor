@@ -4,7 +4,7 @@
                   <label class="label-control" id="labelWeighing" >Weghing</label>
               </div>
               <div style="margin: auto">
-                  <input class="form-control" id="inputWeighing" @bind-value="Weight"/>
+                  <input class="form-control" id="inputWeighing" @bind-value="Weight" readonly/>
               </div>
               <div>
                   <label class="label-control" id="labelCarBrand">Car brand</label>
@@ -111,6 +111,10 @@
             margin-top: 70px
         }
 
+        #buttonAccept:active{
+            background-color: #4682B4
+        }
+
         #buttonWeghing {
             margin-left: 1em;
             min-width: 200px;
@@ -123,6 +127,10 @@
             margin-top: 10px
         }
 
+        #buttonWeghing:active {
+            background-color: #4682B4
+        }
+
         #buttonSave {
             margin-left: 1em;
             min-width: 200px;
@@ -133,6 +141,10 @@
             cursor: pointer;
             background-color: #5F9EA0;
             margin-top: 10px
+        }
+
+        #buttonSave:active {
+            background-color: #4682B4
         }
 
       </style>

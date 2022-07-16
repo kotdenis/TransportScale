@@ -1,0 +1,67 @@
+﻿<div style="background-color: #2F4F4F;margin: 10px;min-height: 550px">
+    <div class="row">
+        <div class="col-sm">
+            <h2 class="text-center" style="font-weight:bold;font-family:Arial, Helvetica, sans-serif;color:white">Weighing for day</h2>
+        </div>
+    </div>
+    <div class="row" style="min-height:460px">
+        <div class="col-sm" style="min-height:460px">
+            <div class="container">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Car plate</th>
+                        <th>Time</th>
+                        <th>Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(ForDayModels != null)
+                    {
+                        foreach(var item in ForDayModels)
+                        {
+                            <tr>
+                                <td>@item.CarPlate</td>
+                                <td>@item.Time</td>
+                                <td>@item.Weight</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <div>
+                <ul class="pagination">
+                        @if(Links != null)
+                        {
+                            @foreach (var link in Links)
+                            {
+                                <li @onclick="async() => await OnSelectedPage(link)" @onclick:preventDefault @onclick:stopPropagation
+                                    style="cursor: pointer;" class="page-item @(link.Enabled ? null : "disabled")
+                                    @(link.Active ? "active" : null)">
+                                    <span class="page-link" href="#">@link.Text</span>
+                                </li>
+                            } 
+                        }
+                </ul>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+
+    [Parameter]
+    public List<ForDayModel> ForDayModels { get; set; } = new List<ForDayModel>();
+    [Parameter]
+    public Metadata MetaData { get; set; }
+    [Parameter]
+    public int Spread { get; set; }
+    [Parameter]
+    public EventCallback<int> SelectedPage { get; set; }
+    [Parameter]
+    public List<PagingLink> Links{ get; set; } = new List<PagingLink>();
+    [Parameter]
+    public Func<PagingLink, Task> OnSelectedPage { get; set; }
+}

@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
+@inject NavigationManager navigationManager
+
 <div>
    <nav class="nav-cont" style="display: flex;
     align-items: stretch;
@@ -7,9 +9,10 @@
     height: 35%;
     width: 100%;
     background-color: #000000;">
-       <button class="navbut">Main Menu</button>
-       <button class="navbut">Journal</button>
+       <button class="navbut" @onclick="() => NavigateToMainMenu()" @onclick:preventDefault @onclick:stopPropagation>Main Menu</button>
+       <button class="navbut" @onclick="() => NavigateToJournal()" @onclick:preventDefault @onclick:stopPropagation>Journal</button>
        <button class="navbut">Adding</button>
+       <img src="@imageSource" style="float:right;margin-left:25em;margin-top:1em;" width="90" height="90"/>
    </nav>
 </div>
 <style>
@@ -34,3 +37,17 @@
 <div>
     @Body
 </div>
+
+@code {
+    private string? imageSource = "https://localhost:7257/Lorry_Green.png"; 
+
+    private void NavigateToMainMenu()
+    {
+        navigationManager.NavigateTo("/");
+    }
+
+    private void NavigateToJournal()
+    {
+        navigationManager.NavigateTo("/journal");
+    }
+}

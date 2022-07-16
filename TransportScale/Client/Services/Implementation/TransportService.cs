@@ -1,9 +1,11 @@
-﻿using System.Net.Http.Headers;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using TransportScale.Client.Constants;
+using TransportScale.Client.Features;
 using TransportScale.Client.Services.Interfaces;
 using TransportScale.Dto.DtoModels;
+using TransportScale.Dto.Pagination;
 
 namespace TransportScale.Client.Services.Implementation
 {
@@ -24,7 +26,7 @@ namespace TransportScale.Client.Services.Implementation
             return transport;
         }
 
-        public async Task<List<JournalDto>> SaveWeightAsync(JournalDto journal)
+        public async Task<bool> SaveWeightAsync(JournalDto journal)
         {
             var request = new HttpRequestMessage()
             {
@@ -34,9 +36,31 @@ namespace TransportScale.Client.Services.Implementation
             };
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var response = await _httpClient.SendAsync(request);
-            var result = await response.Content.ReadAsStringAsync();
-            var list = JsonSerializer.Deserialize<List<JournalDto>>(result);
-            return list;
+            if (response.IsSuccessStatusCode)
+                return true;
+            return false;
+        }
+
+        public async Task<List<ForDayModel>> GetForDayModelsAsync()
+        {
+            var models = await _httpClient.GetFromJsonAsync<List<ForDayModel>>(new Uri(AppConstants.TransportUrl + "forday"));
+            return models;
+        }
+
+        public async Task<PagingResponse<ForDayModel>> GetPagedForDayAsync(JournalParameters parameters)
+        {
+            var queryStringParam = new Dictionary<string, string>
+            {
+                ["pageNumber"] = parameters.PageNumber.ToString()
+            };
+            var response = await _httpClient.GetAsync(QueryHelpers.AddQueryString(AppConstants.TransportUrl + "forday2", queryStringParam));
+            var content = await response.Content.ReadAsStringAsync();
+            var pagingResponse = new PagingResponse<ForDayModel>
+            {
+                Items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ForDayModel>>(content),
+                MetaData = Newtonsoft.Json.JsonConvert.DeserializeObject<Metadata>(response.Headers.GetValues("X-Pagination").First())
+            };
+            return pagingResponse;
         }
     }
 }

@@ -4,6 +4,7 @@ using FluentValidation.Results;
 using TransportScale.Core.Services.Interfacies;
 using TransportScale.Data.Repositries.Interfacies;
 using TransportScale.Dto.DtoModels;
+using TransportScale.Dto.Pagination;
 using TransportScale.Entity.Entities;
 
 namespace TransportScale.Core.Services.Implementation
@@ -54,7 +55,7 @@ namespace TransportScale.Core.Services.Implementation
             return dto;
         }
 
-        public async Task<List<JournalDto>> SaveTransportWeightAsync(JournalDto journalDto, CancellationToken ct)
+        public async Task SaveTransportWeightAsync(JournalDto journalDto, CancellationToken ct)
         {
             ValidationResult valid = await _validatorJournal.ValidateAsync(journalDto, ct);
             if (!valid.IsValid)
@@ -63,12 +64,46 @@ namespace TransportScale.Core.Services.Implementation
             journal.WeighinDate = DateTime.UtcNow;
             journal.Date = DateTime.UtcNow.ToShortDateString();
             journal.Time = DateTime.UtcNow.ToShortTimeString();
-            var journals = await _journalRepository.CreateAsync(journal, ct);
-            var dtos = _mapper.ProjectTo<JournalDto>(journals.AsQueryable());
+            await _journalRepository.CreateAsync(journal, ct);
+        }
+
+        public async Task<List<ForDayModel>> GetWeighingForDayAsync(CancellationToken ct)
+        {
+            var journals = await _journalRepository.GetAllAsync(ct);
             var now = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 0, 0, 0);
-            List<JournalDto> result = new List<JournalDto>();
-            result = dtos.Where(x => x.WeighinDate >= now).ToList();
-            return result;
+            var list = journals.Where(x => x.WeighinDate >= now).ToList(); 
+            var models = new List<ForDayModel>();
+            foreach (var journal in list)
+            {
+                models.Add(new ForDayModel
+                {
+                    CarPlate = journal.Number,
+                    Time = journal.Time,
+                    Weight = journal.Weight
+                });
+            }
+            if (list.Count > 0)
+            {
+                return models;
+            }
+            else
+                return new List<ForDayModel>();
+        }
+
+        public async Task<PagedList<ForDayModel>> GetWeighingForDayAsync2(JournalParameters parameters, CancellationToken ct)
+        {
+            var journals = await _journalRepository.GetAllAsync(ct);
+            var list = new List<ForDayModel>();
+            foreach(var journal in journals)
+            {
+                list.Add(new ForDayModel
+                {
+                    CarPlate = journal.Number,
+                    Time = journal.Time,
+                    Weight = journal.Weight
+                });
+            }
+            return PagedList<ForDayModel>.ToPagedList(list, parameters.PageNumber, parameters.PageSize);
         }
 
         public async Task CreateNewTransportAsync(TransportDto transportDto, CancellationToken ct)

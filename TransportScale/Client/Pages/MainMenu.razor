@@ -1,44 +1,230 @@
 ﻿@page "/"
-@layout MainLayout
+@layout MainLayout 
 
+@using System.Drawing
+@using ChartJs.Blazor.BarChart
+@using ChartJs.Blazor.Common 
+@using ChartJs.Blazor.Util
 @using TransportScale.Dto.DtoModels
+@using TransportScale.Dto.Pagination
+
+@inject ITransportService _transportService
+@inject IJSRuntime _jsRuntime
+@inject ChartState chartState
+@inject JournalState journalState
 
 <div class="container">
   <div class="row">
     <div class="col-sm">
       <div style="background-color: #2F4F4F;margin: 10px;min-height: 550px">
-
+          <div>
+              <h2 class="text-center" style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;">Transport axles chart</h2>
+          </div>
+          <div style="height:400px">
+            @if(chartState.TransportBarConfig != null)
+            {
+                <Chart Config="chartState.TransportBarConfig" @ref="chartState.TransportChart" Height="350"></Chart>
+            }
+          </div>
       </div>
     </div>
     <div class="col-sm">
-      <MainMenuWeighing CarBrand="@transportDto.Name" CarPlate="@transportDto.Number" Weight="CurrentWeight" 
-        ImportedCargo="@transportDto.Cargo" AcceptCarAsync="@AcceptCarAsync" BeginWeighingAsync="@BeginWeighingAsync" SaveWeighingAsync="@SaveWeighingAsync"></MainMenuWeighing>
+      <MainMenuWeighing CarBrand="@_transportDto.Name" CarPlate="@_transportDto.Number" Weight="CurrentWeight" 
+        ImportedCargo="@_transportDto.Cargo" AcceptCarAsync="@AcceptCarAsync" BeginWeighingAsync="@BeginWeighingAsync" SaveWeighingAsync="@SaveWeighingAsync"></MainMenuWeighing>
     </div>
     <div class="col-sm">
-      Одна из трёх колонок
+      <MainMenuForDay ForDayModels="@journalState.JournalForDay" MetaData="@MetaData" SelectedPage="@SelectedPage" Spread="@_spread" Links="_links" 
+        OnSelectedPage="@OnSelectedPage"></MainMenuForDay> 
     </div>
+    
   </div>
 </div>
+<div class="modal" tabindex="-1" id="modalsave">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" style="font-family:Arial, Helvetica, sans-serif;font-weight: bold;">Info</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" @onclick="async _ => await CloseModal()" 
+          style="background-color: red;"></button>
+        </div>
+        <div class="modal-body">
+          <p style="font-family:Arial, Helvetica, sans-serif;font-weight: bold;">All was saved!</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @onclick="async _ => await CloseModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 @code {
 
-    private TransportDto transportDto = new TransportDto { Name = "", AxisNumber = 0, Cargo = "", Number = "", Weight = 0 };
+    private TransportDto _transportDto = new TransportDto { Name = "", AxisNumber = 0, Cargo = "", Number = "", Weight = 0 };
     private int TotalWeight { get; set; }
     private int CurrentWeight { get; set; } = 0;
+    private double[] _axisArray;
+    private string[] _labelsArray;
+
+    private JournalParameters _parameters = new JournalParameters();
+    private Metadata MetaData { get; set; } = new Metadata();
+    private List<PagingLink> _links{ get; set; } = new List<PagingLink>();
+    private int _spread = 2;
+
+    protected async override Task OnInitializedAsync()
+    {
+        chartState = new ChartState();
+        StateHasChanged();
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    { 
+        await GetForDayAsync();
+        CreatePaginationLinks();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetForDayAsync();
+        StateHasChanged();
+    }
+
+    private void CreatePaginationLinks()
+    {
+        _links = new List<PagingLink>();
+        _links.Add(new PagingLink(MetaData.CurrentPage - 1, MetaData.HasPrevious, "Prev"));
+        for (int i = 1; i <= MetaData.TotalPages; i++)
+        {
+            if(i >= MetaData.CurrentPage - _spread && i <= MetaData.CurrentPage + _spread)
+            {
+                _links.Add(new PagingLink(i, true, i.ToString()) { Active = MetaData.CurrentPage == i });
+            }
+        }
+        _links.Add(new PagingLink(MetaData.CurrentPage + 1, MetaData.HasNext, "Next"));
+    }
+
+    private async Task OnSelectedPage(PagingLink link)
+    {
+        if (link.Page == MetaData.CurrentPage || !link.Enabled)
+            return;
+        MetaData.CurrentPage = link.Page;
+        await SelectedPage(link.Page);
+        CreatePaginationLinks();
+        StateHasChanged();
+    }
+
+
+
+    private async Task GetForDayAsync()
+    {
+        var pagingResponse = await _transportService.GetPagedForDayAsync(_parameters);
+        journalState.JournalForDay = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+    }
 
     private async Task AcceptCarAsync()
     {
-
+        _transportDto = await _transportService.GetRandomTransporAsync();
+        TotalWeight = _transportDto.Weight;
+        StateHasChanged();
     }
 
     private async Task BeginWeighingAsync()
     {
+        await _jsRuntime.InvokeVoidAsync("showDemo");
+        _axisArray = new double[_transportDto.AxisNumber];
+        _labelsArray = new string[_transportDto.AxisNumber];
+        int part = _transportDto.Weight / 10;
+        for(int i = 0; i < 10; i++)
+        {
+            CurrentWeight += part;
+            StateHasChanged();
+            await Task.Delay(1000);
+        }
+        await _jsRuntime.InvokeVoidAsync("endWeighing");
+        var load = Math.Round((double)(TotalWeight / _transportDto.AxisNumber), 2); 
+        for(int i = 0; i < _transportDto.AxisNumber; i++)
+        {
+            if(i == 0)
+            {
+                _axisArray[i] = load - 500;
+                _labelsArray[i] = _axisArray[i].ToString();
+            }
+            if(i == 1)
+            {
+                _axisArray[i] = load + 500;
+                _labelsArray[i] = _axisArray[i].ToString();
+            }
+            if(i > 1)
+            {
+                _axisArray[i] = load;
+                _labelsArray[i] = _axisArray[i].ToString();
+            }
 
+        }
+        await ShowChartAsync();
+        StateHasChanged();
     }
 
     private async Task SaveWeighingAsync()
     {
-        
+        var journalDto = new JournalDto
+        {
+            Cargo = _transportDto.Cargo,
+            Date = DateTime.UtcNow.ToShortDateString(),
+            Name = _transportDto.Name,
+            Number = _transportDto.Number,
+            Time = DateTime.UtcNow.ToShortTimeString(),
+            WeighinDate = DateTime.UtcNow,
+            Weight = TotalWeight
+        };
+        var isSaved = await _transportService.SaveWeightAsync(journalDto);
+        if (isSaved)
+        {
+            CurrentWeight = 0;
+            await _jsRuntime.InvokeVoidAsync("saveWeighing");
+            if (chartState.TransportBarConfig.Data.Datasets.Count > 0)
+                chartState.TransportBarConfig.Data.Datasets.Clear();
+            if (chartState.TransportBarConfig.Data.Labels.Count > 0)
+                chartState.TransportBarConfig.Data.Labels.Clear();
+            StateHasChanged();
+        }
+    }
+
+    
+
+    private async Task ShowChartAsync()
+    {
+        IDataset<double> dataset = new BarDataset<double>(_axisArray)
+            {
+                Label = "My first dataset",
+                BackgroundColor = ColorUtil.FromDrawingColor(Color.FromArgb(120, 255, 0, 0))
+
+            };
+
+        if (chartState.TransportBarConfig.Data.Labels.Count > 0)
+                chartState.TransportBarConfig.Data.Labels.Clear();
+
+        foreach(var item in _labelsArray)
+        {
+            chartState.TransportBarConfig.Data.Labels.Add(item);
+        }
+
+        if (chartState.TransportBarConfig.Data.Datasets.Count > 0)
+            chartState.TransportBarConfig.Data.Datasets.Clear();
+
+        chartState.TransportBarConfig.Data.Datasets.Add(dataset); 
+
+        if(chartState.TransportChart != null)
+            await chartState.TransportChart.Update();
+        await Task.CompletedTask;
+    }
+
+    private async Task CloseModal()
+    {
+        await _jsRuntime.InvokeVoidAsync("closeModal");
     }
 
 }

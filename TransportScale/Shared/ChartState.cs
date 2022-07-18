@@ -20,7 +20,7 @@ namespace TransportScale.Shared
                     Title = new OptionsTitle
                     {
                         Display = true,
-                        Text = "ChartJs.Blazor Bar Chart"
+                        Text = "Quantity of axles and their loads"
                     }
                 }
             };

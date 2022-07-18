@@ -3,19 +3,22 @@
 @inject NavigationManager navigationManager
 
 <div>
-   <nav class="nav-cont" style="display: flex;
-    align-items: stretch;
-    flex-direction: row;
-    height: 35%;
-    width: 100%;
-    background-color: #000000;">
+   <nav class="nav-cont">
        <button class="navbut" @onclick="() => NavigateToMainMenu()" @onclick:preventDefault @onclick:stopPropagation>Main Menu</button>
        <button class="navbut" @onclick="() => NavigateToJournal()" @onclick:preventDefault @onclick:stopPropagation>Journal</button>
-       <button class="navbut">Adding</button>
+       <button class="navbut" @onclick="() => NavigateToAdding()" @onclick:preventDefault @onclick:stopPropagation>Add New</button>
        <img src="@imageSource" style="float:right;margin-left:25em;margin-top:1em;" width="90" height="90"/>
    </nav>
 </div>
 <style>
+    .nav-cont {
+        display: flex;
+        align-items: stretch;
+        flex-direction: row;
+        height: 35%;
+        width: 100%;
+        background-color: #000000;
+    }
     .navbut {
         margin: 1em;
         background-color: #e4e8ed; 
@@ -36,10 +39,28 @@
 </style>
 <div>
     @Body
+<footer style="height:130px;width:100%;background-color:#000000;margin-top:50px;">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-2" style="align-content:center;">
+                <img src="@footerImageSource" height="120" width="140" />
+            </div>
+            <div class="col-sm-7">
+                <h1 class="text-center" style="font-weight:bold;color:#DCDCDC">Scales for transport</h1>
+                <p class="text-center" style="color:#A9A9A9">This is a simulator of the operation of transport scales with axial load</p>
+            </div>
+            <div class="col-sm-3">
+
+            </div>
+        </div>
+    </div>
+</footer>
 </div>
 
+
 @code {
-    private string? imageSource = "https://localhost:7257/Lorry_Green.png"; 
+    private string? imageSource = "https://localhost:7257/Lorry_Green.png";
+    private string footerImageSource = "https://localhost:7257/Truck_Right_Green.png";
 
     private void NavigateToMainMenu()
     {
@@ -49,5 +70,10 @@
     private void NavigateToJournal()
     {
         navigationManager.NavigateTo("/journal");
+    }
+
+    private void NavigateToAdding()
+    {
+        navigationManager.NavigateTo("/adding");
     }
 }

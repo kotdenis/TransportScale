@@ -1,0 +1,116 @@
+﻿@page "/adding"
+@layout MainLayout 
+
+@inject ITransportService _transportService
+@inject IJSRuntime _jsRuntime
+
+<div class="container">
+    <h1 class="text-center" style="font-weight:bold;font-family:Arial, Helvetica, sans-serif;">Add new information about transport.</h1>
+  <div class="row" style="margin-top:2em;margin-bottom:3em;">
+    <div class="col-sm-3">
+      
+    </div>
+    <div class="col-sm-6" style="background-color:#483D8B">
+      <EditForm OnValidSubmit="@CreateNewAsync" Model="@TransportModel" >
+          <div>
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+        </div>
+        <div class="form-group" style="margin-top:1em">
+            <div>
+                <label class="form-label" style="font-weight:bold;color:#C0C0C0"><span class="fa-solid fa-truck"></span>&nbsp;Car brand</label>
+            </div>
+            <div>
+                <InputText class="form-control" @bind-Value="TransportModel.Name"/>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:1em">
+            <div>
+                <label class="form-label" style="font-weight:bold;color:#C0C0C0"><span class="fa-solid fa-car-rear"></span>&nbsp;Car plate</label>
+            </div>
+            <div>
+                <InputText class="form-control" @bind-Value="TransportModel.Number"/>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:1em">
+            <div>
+                <label class="form-label" style="font-weight:bold;color:#C0C0C0"><span class="fa-solid fa-box"></span>&nbsp;Imported cargo</label>
+            </div>
+            <div>
+                <InputText class="form-control" @bind-Value="TransportModel.Cargo"/>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:1em">
+            <div>
+                <label class="form-label" style="font-weight:bold;color:#C0C0C0"><span class="fa-solid fa-gears"></span>&nbsp;Quantity of axles</label>
+            </div>
+            <div>
+                <InputNumber class="form-control" @bind-Value="TransportModel.AxisNumber"/>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:1em">
+            <div>
+                <label class="form-label" style="font-weight:bold;color:#C0C0C0"><span class="fa-solid fa-gauge"></span>&nbsp;Weight</label>
+            </div>
+            <div>
+                <InputNumber class="form-control" @bind-Value="TransportModel.Weight"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <button type="submit" id="buttonCreate"><span class="fa-solid fa-floppy-disk" style="float:left;margin-top:0.3em;"></span>Create</button>
+        </div>
+      </EditForm>
+    </div>
+    <div class="col-sm-3">
+      
+    </div>
+  </div>
+</div>
+<ErrorModal CloseModal="@CloseErrorModal" ErrorText="@_errorText"></ErrorModal>
+<SaveModal CloseModal="@CloseSaveModal" SavedText="@_savedText"></SaveModal>
+<style>
+    #buttonCreate {
+        min-width: 200px;
+        font-weight: bold;
+        font-family: Arial, Helvetica, sans-serif;
+        height: 40px;
+        border-radius: 7px;
+        cursor: pointer;
+        background-color: #9370DB;
+        margin-top: 2em;
+        float:right;
+        margin-bottom: 2em;
+    }
+
+    #buttonCreate:active {
+        background-color: #9932CC;
+    }
+</style>
+
+
+
+@code {
+    private TransportModel TransportModel { get; set; } = new ();
+    private string _errorText = "Quantity of axles or weight are incorrect!";
+    private string _savedText = "Transport has been created!";
+
+    private async Task CreateNewAsync()
+    {
+        var isCreated = await _transportService.CreateNewTransportAsync(TransportModel); 
+        if(isCreated)
+            await _jsRuntime.InvokeVoidAsync("showModal");
+        else
+            await _jsRuntime.InvokeVoidAsync("errorShow");
+    }
+
+    private async Task CloseSaveModal()
+    {
+        await _jsRuntime.InvokeVoidAsync("closeModal");
+    }
+
+    private async Task CloseErrorModal()
+    {
+        await _jsRuntime.InvokeVoidAsync("hideError");
+    }
+
+}

@@ -10,5 +10,6 @@ namespace TransportScale.Client.Services.Interfaces
         Task<bool> SaveWeightAsync(JournalDto journal);
         Task<List<ForDayModel>> GetForDayModelsAsync();
         Task<PagingResponse<ForDayModel>> GetPagedForDayAsync(JournalParameters parameters);
+        Task<bool> CreateNewTransportAsync(TransportModel transportModel);
     }
 }

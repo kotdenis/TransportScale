@@ -10,8 +10,13 @@ function endWeighing() {
     $('#inputWeighing').css('background-color', '#32CD32');
 }
 
+function weighingOff() {
+    $("#buttonWeghing").attr("disabled", "true");
+}
+
 function saveWeighing() {
     $("#buttonAccept").removeAttr("disabled");
+    $("#buttonWeghing").removeAttr("disabled");
     $('#inputWeighing').val('');
     $('#inputCarBrand').val('');
     $('#inputCarPlate').val('');
@@ -20,8 +25,20 @@ function saveWeighing() {
     $('#modalsave').show();
 }
 
+function showModal() {
+    $('#modalsave').show();
+}
+
 function closeModal() {
     $('#modalsave').hide();
+}
+
+function errorShow() {
+    $('#modalError').show();
+}
+
+function hideError() {
+    $('#modalError').hide();
 }
 
 function test(value) {

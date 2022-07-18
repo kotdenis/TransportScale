@@ -18,6 +18,7 @@ namespace TransportScale.Core.Services.Implementation
         private readonly ITransportQuantityRepository _quantityRepository;
         private readonly IValidator<TransportDto> _validator;
         private readonly IValidator<JournalDto> _validatorJournal;
+        private readonly IValidator<TransportModel> _validatorModel;
 
         public TransportService(ICacheManager cacheManager,
             ITransportRepository transportRepository,
@@ -25,6 +26,7 @@ namespace TransportScale.Core.Services.Implementation
             ITransportQuantityRepository quantityRepository,
             IValidator<TransportDto> validator,
             IValidator<JournalDto> validatorJournal,
+            IValidator<TransportModel> validatorModel,
             IMapper mapper)
         {
             _cacheManager = cacheManager;
@@ -33,6 +35,7 @@ namespace TransportScale.Core.Services.Implementation
             _quantityRepository = quantityRepository;
             _validator = validator;
             _validatorJournal = validatorJournal;
+            _validatorModel = validatorModel;
             _mapper = mapper;
         }
 
@@ -93,8 +96,10 @@ namespace TransportScale.Core.Services.Implementation
         public async Task<PagedList<ForDayModel>> GetWeighingForDayAsync2(JournalParameters parameters, CancellationToken ct)
         {
             var journals = await _journalRepository.GetAllAsync(ct);
+            var now = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 0, 0, 0);
+            var forDayTransports = journals.Where(x => x.WeighinDate >= now).ToList();
             var list = new List<ForDayModel>();
-            foreach(var journal in journals)
+            foreach(var journal in forDayTransports)
             {
                 list.Add(new ForDayModel
                 {
@@ -106,9 +111,9 @@ namespace TransportScale.Core.Services.Implementation
             return PagedList<ForDayModel>.ToPagedList(list, parameters.PageNumber, parameters.PageSize);
         }
 
-        public async Task CreateNewTransportAsync(TransportDto transportDto, CancellationToken ct)
+        public async Task<bool> CreateNewTransportAsync(TransportModel model, CancellationToken ct)
         {
-            ValidationResult result = await _validator.ValidateAsync(transportDto, ct);
+            ValidationResult result = await _validatorModel.ValidateAsync(model, ct);
 
             if (result.IsValid)
             {
@@ -116,11 +121,12 @@ namespace TransportScale.Core.Services.Implementation
                 var quantities = await _quantityRepository.GetAllAsync(ct);
                 var quantity = quantities.Select(x => x).FirstOrDefault();
                 quantity.Quantity = quantity.Quantity + 1;
-                var transport = _mapper.Map<Transport>(transportDto);
+                var transport = _mapper.Map<Transport>(model);
                 await _transportRepository.CreateAsync(transport, ct);
                 await _quantityRepository.UpdateAsync(quantity, ct);
+                return true;
             }
-
+            return false;
         }
     }
 }

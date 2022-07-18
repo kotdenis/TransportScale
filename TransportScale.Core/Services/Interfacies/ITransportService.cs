@@ -7,7 +7,7 @@ namespace TransportScale.Core.Services.Interfacies
     {
         Task<TransportDto> GetRandomTransportAsync(CancellationToken ct);
         Task SaveTransportWeightAsync(JournalDto journalDto, CancellationToken ct);
-        Task CreateNewTransportAsync(TransportDto transportDto, CancellationToken ct);
+        Task<bool> CreateNewTransportAsync(TransportModel model, CancellationToken ct);
         Task<List<ForDayModel>> GetWeighingForDayAsync(CancellationToken ct);
         Task<PagedList<ForDayModel>> GetWeighingForDayAsync2(JournalParameters parameters, CancellationToken ct);
     }

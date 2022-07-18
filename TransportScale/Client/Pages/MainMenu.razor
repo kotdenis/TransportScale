@@ -18,7 +18,7 @@
     <div class="col-sm">
       <div style="background-color: #2F4F4F;margin: 10px;min-height: 550px">
           <div>
-              <h2 class="text-center" style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;">Transport axles chart</h2>
+              <h2 class="text-center" style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;font-weight:bold">Transport axles chart</h2>
           </div>
           <div style="height:400px">
             @if(chartState.TransportBarConfig != null)
@@ -39,24 +39,8 @@
     
   </div>
 </div>
-<div class="modal" tabindex="-1" id="modalsave">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" style="font-family:Arial, Helvetica, sans-serif;font-weight: bold;">Info</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" @onclick="async _ => await CloseModal()" 
-          style="background-color: red;"></button>
-        </div>
-        <div class="modal-body">
-          <p style="font-family:Arial, Helvetica, sans-serif;font-weight: bold;">All was saved!</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @onclick="async _ => await CloseModal()">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<SaveModal CloseModal="@CloseModal" SavedText="@_savedText"></SaveModal>
+<ErrorModal CloseModal="@CloseErrorModal" ErrorText="@_errorText"></ErrorModal>
 
 @code {
 
@@ -70,6 +54,9 @@
     private Metadata MetaData { get; set; } = new Metadata();
     private List<PagingLink> _links{ get; set; } = new List<PagingLink>();
     private int _spread = 2;
+
+    private string _savedText = "All was saved!";
+    private string _errorText = "Server's error";
 
     protected async override Task OnInitializedAsync()
     {
@@ -133,39 +120,43 @@
 
     private async Task BeginWeighingAsync()
     {
-        await _jsRuntime.InvokeVoidAsync("showDemo");
-        _axisArray = new double[_transportDto.AxisNumber];
-        _labelsArray = new string[_transportDto.AxisNumber];
-        int part = _transportDto.Weight / 10;
-        for(int i = 0; i < 10; i++)
+        if(CurrentWeight == 0)
         {
-            CurrentWeight += part;
-            StateHasChanged();
-            await Task.Delay(1000);
-        }
-        await _jsRuntime.InvokeVoidAsync("endWeighing");
-        var load = Math.Round((double)(TotalWeight / _transportDto.AxisNumber), 2); 
-        for(int i = 0; i < _transportDto.AxisNumber; i++)
-        {
-            if(i == 0)
+            await _jsRuntime.InvokeVoidAsync("showDemo");
+            _axisArray = new double[_transportDto.AxisNumber];
+            _labelsArray = new string[_transportDto.AxisNumber];
+            int part = _transportDto.Weight / 10;
+            for(int i = 0; i < 10; i++)
             {
-                _axisArray[i] = load - 500;
-                _labelsArray[i] = _axisArray[i].ToString();
+                CurrentWeight += part;
+                StateHasChanged();
+                await Task.Delay(1000);
             }
-            if(i == 1)
+            await _jsRuntime.InvokeVoidAsync("endWeighing");
+            var load = Math.Round((double)(TotalWeight / _transportDto.AxisNumber), 2); 
+            for(int i = 0; i < _transportDto.AxisNumber; i++)
             {
-                _axisArray[i] = load + 500;
-                _labelsArray[i] = _axisArray[i].ToString();
-            }
-            if(i > 1)
-            {
-                _axisArray[i] = load;
-                _labelsArray[i] = _axisArray[i].ToString();
-            }
+                if(i == 0)
+                {
+                    _axisArray[i] = load - 500;
+                    _labelsArray[i] = _axisArray[i].ToString();
+                }
+                if(i == 1)
+                {
+                    _axisArray[i] = load + 500;
+                    _labelsArray[i] = _axisArray[i].ToString();
+                }
+                if(i > 1)
+                {
+                    _axisArray[i] = load;
+                    _labelsArray[i] = _axisArray[i].ToString();
+                }
 
+            }
+            await _jsRuntime.InvokeVoidAsync("weighingOff");
+            await ShowChartAsync();
+            StateHasChanged();
         }
-        await ShowChartAsync();
-        StateHasChanged();
     }
 
     private async Task SaveWeighingAsync()
@@ -189,8 +180,14 @@
                 chartState.TransportBarConfig.Data.Datasets.Clear();
             if (chartState.TransportBarConfig.Data.Labels.Count > 0)
                 chartState.TransportBarConfig.Data.Labels.Clear();
+            await GetForDayAsync();
             StateHasChanged();
         }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("errorShow");
+        }
+
     }
 
     
@@ -225,6 +222,11 @@
     private async Task CloseModal()
     {
         await _jsRuntime.InvokeVoidAsync("closeModal");
+    }
+
+    private async Task CloseErrorModal()
+    {
+        await _jsRuntime.InvokeVoidAsync("hideError");
     }
 
 }

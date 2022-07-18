@@ -62,5 +62,20 @@ namespace TransportScale.Client.Services.Implementation
             };
             return pagingResponse;
         }
+
+        public async Task<bool> CreateNewTransportAsync(TransportModel transportModel)
+        {
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(AppConstants.TransportUrl + "new"),
+                Method = HttpMethod.Post,
+                Content = JsonContent.Create(transportModel)
+            };
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _httpClient.SendAsync(request);
+            if(response.IsSuccessStatusCode)
+                return true;
+            return false;
+        }
     }
 }

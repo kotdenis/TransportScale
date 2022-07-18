@@ -21,7 +21,15 @@ namespace TransportScale.Core.Configuration
                 .ForMember(x => x.Created, _ => _.Ignore())
                 .ForMember(x => x.Updated, _ => _.Ignore());
 
-            CreateMap<Transport, TransportDto>();
+            CreateMap<Transport, TransportDto>(); 
+
+            CreateMap<TransportModel, Transport>()
+                .ForMember(x => x.IsDeleted, _ => _.Ignore())
+                .ForMember(x => x.Created, _ => _.Ignore())
+                .ForMember(x => x.Updated, _ => _.Ignore())
+                .ForMember(x => x.Id, _ => _.Ignore());
+
+            CreateMap<Transport, TransportModel>();
         }
     }
 }

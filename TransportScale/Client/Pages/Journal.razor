@@ -3,6 +3,7 @@
 
 @inject JournalState journalState
 @inject IJournalService journalService
+@inject IJSRuntime _jsRuntime
 
 <div class="container">
   <div class="row mt-3" style="height:500px;min-height:500px;">
@@ -19,16 +20,128 @@
                         <th>Weight</th>
                     </tr>
                 </thead>
+                <tbody>
+                    @if(journalState?.JournalTotal?.Count > 0)
+                    {
+                        int num = _number;
+                        for(int i = 0; i < journalState.JournalTotal.Count; i++)
+                        {
+                            num += 1;
+                            <tr>
+                                <td>@num</td>
+                               <td>@journalState.JournalTotal[i].Name</td>
+                               <td>@journalState.JournalTotal[i].Number</td>
+                               <td>@journalState.JournalTotal[i].Cargo</td>
+                               <td>@journalState.JournalTotal[i].Date</td>
+                               <td>@journalState.JournalTotal[i].Time</td>
+                               <td>@journalState.JournalTotal[i].Weight</td>
+                           </tr>
+                        }
+                    }
+                </tbody>
           </table>
+          <div>
+                <ul class="pagination">
+                        @if(_links != null)
+                        {
+                            @foreach (var link in _links)
+                            {
+                                <li @onclick="async() => await OnSelectedPage(link)" @onclick:preventDefault @onclick:stopPropagation
+                                    style="cursor: pointer;" class="page-item @(link.Enabled ? null : "disabled")
+                                    @(link.Active ? "active" : null)">
+                                    <span class="page-link" href="#">@link.Text</span>
+                                </li>
+                            } 
+                        }
+                </ul>
+            </div>
       </div>
   </div>
+  <JourmalSearchPanel SearchWeighingAsync="@SearchWeighingAsync" SearchModel="@SearchModel" ReturnToTotalAsync="@ReturnToTotalAsync"></JourmalSearchPanel>
 </div>
 
 @code {
 
+    private JournalParameters _parameters = new JournalParameters();
+    private Metadata MetaData { get; set; } = new Metadata();
+    private List<PagingLink> _links{ get; set; } = new List<PagingLink>();
+    private int _spread = 2;
+    private int _number;
+
+    public DateTime WeighingDate { get; set; } = DateTime.UtcNow;
+    public string CarPlate { get; set; } = string.Empty;
+    public SearchModel SearchModel { get; set; } = new SearchModel();
+
     protected async override Task OnInitializedAsync()
     {
-        journalState.JournalTotal = await journalService.GetJournalDtosAsync();
+        
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetTotalJournalAsync();
+        CreatePaginationLinks();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        if(!journalState.IsInSearchState)
+            await GetTotalJournalAsync();
+        if (journalState.IsInSearchState)
+            await SearchWeighingAsync();
+        StateHasChanged();
+    }
+
+    private void CreatePaginationLinks()
+    {
+        _links = new List<PagingLink>();
+        _links.Add(new PagingLink(MetaData.CurrentPage - 1, MetaData.HasPrevious, "Prev"));
+        for (int i = 1; i <= MetaData.TotalPages; i++)
+        {
+            if(i >= MetaData.CurrentPage - _spread && i <= MetaData.CurrentPage + _spread)
+            {
+                _links.Add(new PagingLink(i, true, i.ToString()) { Active = MetaData.CurrentPage == i });
+            }
+        }
+        _links.Add(new PagingLink(MetaData.CurrentPage + 1, MetaData.HasNext, "Next"));
+        _number = 10;
+        _number = _number * (MetaData.CurrentPage - 1);
+    }
+
+    private async Task OnSelectedPage(PagingLink link)
+    {
+        if (link.Page == MetaData.CurrentPage || !link.Enabled)
+            return;
+        MetaData.CurrentPage = link.Page;
+        await SelectedPage(link.Page);
+        CreatePaginationLinks();
+        StateHasChanged();
+    }
+
+    private async Task GetTotalJournalAsync()
+    {
+        var pagingResponse = await journalService.GetPagedJournalAsync(_parameters);
+        journalState.JournalTotal = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+    }
+
+    private async Task SearchWeighingAsync()
+    {
+        var pagingResponse = await journalService.SearchWeighingAsync(SearchModel, _parameters);
+        journalState.JournalTotal = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+        CreatePaginationLinks();
+        journalState.IsInSearchState = true;
+        StateHasChanged();
+    } 
+
+    private async Task ReturnToTotalAsync()
+    {
+        journalState.IsInSearchState = false;
+        await GetTotalJournalAsync();
+        CreatePaginationLinks();
+        StateHasChanged();
     }
 
 }

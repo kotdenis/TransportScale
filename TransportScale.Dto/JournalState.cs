@@ -6,5 +6,6 @@ namespace TransportScale.Dto
     {
         public List<ForDayModel> JournalForDay { get; set; } = new List<ForDayModel>();
         public List<JournalDto> JournalTotal { get; set; } = new List<JournalDto>();
+        public bool IsInSearchState { get; set; }
     }
 }

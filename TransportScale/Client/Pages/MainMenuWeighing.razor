@@ -26,13 +26,15 @@
               </div>
           </form>
           <div>
-              <button id="buttonAccept" @onclick="async _ => await AcceptCarAsync()">Accept car</button>
+              <button id="buttonAccept" @onclick="async _ => await AcceptCarAsync()"><span class="fa-solid fa-truck" style="float:left;margin-top:0.3em;"></span>Accept car</button>
           </div>
           <div>
-              <button id="buttonWeghing" @onclick="async _ => await BeginWeighingAsync()" @onclick:preventDefault @onclick:stopPropagation>Begin weighing</button>
+              <button id="buttonWeghing" @onclick="async _ => await BeginWeighingAsync()" @onclick:preventDefault @onclick:stopPropagation>
+                  <span class="fa-solid fa-gauge" style="float:left;margin-top:0.3em;"></span>Begin weighing</button>
           </div>
           <div>
-              <button id="buttonSave" @onclick="async _ => await SaveWeighingAsync()" @onclick:preventDefault @onclick:stopPropagation>Save weighing</button>
+              <button id="buttonSave" @onclick="async _ => await SaveWeighingAsync()" @onclick:preventDefault @onclick:stopPropagation>
+                  <span class="fa-solid fa-upload" style="float:left;margin-top:0.3em;"></span>Save weighing</button>
           </div>
       </div>
       <style>

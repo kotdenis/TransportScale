@@ -40,18 +40,20 @@ namespace TransportScale.Server.Controllers
             return Ok(models);
         }
 
-        [HttpPost("new-transport")]
-        public async Task<ActionResult<bool>> CreateNewTransport([FromBody] TransportDto transport, CancellationToken ct = default)
+        [HttpPost("new")]
+        public async Task<ActionResult<bool>> CreateNewTransport([FromBody] TransportModel model, CancellationToken ct = default)
         {
-            if (transport == null)
+            var isCreated = await _transportService.CreateNewTransportAsync(model, ct);
+            if (isCreated)
+                return Ok(true);
+            else
                 return BadRequest(false);
-            await _transportService.CreateNewTransportAsync(transport, ct);
-            return Ok(true);
         }
 
         [HttpGet("forday2")]
         public async Task<ActionResult<PagedList<ForDayModel>>> GetPagedForDay([FromQuery] JournalParameters parameters, CancellationToken ct = default)
         {
+            parameters.PageSize = 9;
             var models = await _transportService.GetWeighingForDayAsync2(parameters, ct);
             Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(models.MetaData));
             return Ok(models);

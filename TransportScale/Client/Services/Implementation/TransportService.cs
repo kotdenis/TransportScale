@@ -54,13 +54,17 @@ namespace TransportScale.Client.Services.Implementation
                 ["pageNumber"] = parameters.PageNumber.ToString()
             };
             var response = await _httpClient.GetAsync(QueryHelpers.AddQueryString(AppConstants.TransportUrl + "forday2", queryStringParam));
-            var content = await response.Content.ReadAsStringAsync();
-            var pagingResponse = new PagingResponse<ForDayModel>
+            if (response.IsSuccessStatusCode)
             {
-                Items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ForDayModel>>(content),
-                MetaData = Newtonsoft.Json.JsonConvert.DeserializeObject<Metadata>(response.Headers.GetValues("X-Pagination").First())
-            };
-            return pagingResponse;
+                var content = await response.Content.ReadAsStringAsync();
+                var pagingResponse = new PagingResponse<ForDayModel>
+                {
+                    Items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ForDayModel>>(content),
+                    MetaData = Newtonsoft.Json.JsonConvert.DeserializeObject<Metadata>(response.Headers.GetValues("X-Pagination").First())
+                };
+                return pagingResponse;
+            }
+            return new PagingResponse<ForDayModel>();
         }
 
         public async Task<bool> CreateNewTransportAsync(TransportModel transportModel)
@@ -74,6 +78,55 @@ namespace TransportScale.Client.Services.Implementation
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var response = await _httpClient.SendAsync(request);
             if(response.IsSuccessStatusCode)
+                return true;
+            return false;
+        }
+
+        public async Task UpdateAsync(TransportDto transportDto)
+        {
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(AppConstants.TransportUrl),
+                Method = HttpMethod.Put,
+                Content = JsonContent.Create(transportDto)
+            };
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _httpClient.SendAsync(request);
+        }
+
+        public async Task<PagingResponse<TransportDto>> GetAllAsync(JournalParameters parameters)
+        {
+            var queryStringParam = new Dictionary<string, string>
+            {
+                ["pageNumber"] = parameters.PageNumber.ToString()
+            };
+            var response = await _httpClient.GetAsync(QueryHelpers.AddQueryString(AppConstants.TransportUrl + "all", queryStringParam));
+            var content = await response.Content.ReadAsStringAsync();
+            var pagingResponse = new PagingResponse<TransportDto>
+            {
+                Items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<TransportDto>>(content),
+                MetaData = Newtonsoft.Json.JsonConvert.DeserializeObject<Metadata>(response.Headers.GetValues("X-Pagination").First())
+            };
+            return pagingResponse;
+        }
+
+        public async Task<List<TransportDto>> GetAllTransportsAsync()
+        {
+            var transports = await _httpClient.GetFromJsonAsync<List<TransportDto>>(new Uri(AppConstants.TransportUrl));
+            return transports;
+        }
+
+        public async Task<bool> DeleteAsync(TransportDto transportDto)
+        {
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(AppConstants.TransportUrl + "soft"),
+                Method = HttpMethod.Delete,
+                Content = JsonContent.Create(transportDto)
+            };
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
                 return true;
             return false;
         }

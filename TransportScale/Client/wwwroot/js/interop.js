@@ -25,6 +25,7 @@ function saveWeighing() {
     $('#modalsave').show();
 }
 
+
 function showModal() {
     $('#modalsave').show();
 }
@@ -41,10 +42,15 @@ function hideError() {
     $('#modalError').hide();
 }
 
+function delHide() {
+    $('#modalDelete').hide();
+}
+
+function demo1() {
+    alert("demo");
+}
+
 function test(value) {
-    alert(value);
+    $("#modalDelete").show();
 }
 
-function showTest() {
-
-}

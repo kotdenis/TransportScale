@@ -3,14 +3,16 @@
 
 @inject ITransportService _transportService
 @inject IJSRuntime _jsRuntime
+@inject TransportState _transportState
+@inject NavigationManager _navigationManager
+@inject UpdateState _updateState
 
 <div class="container">
-    <h1 class="text-center" style="font-weight:bold;font-family:Arial, Helvetica, sans-serif;">Add new information about transport.</h1>
+    
   <div class="row" style="margin-top:2em;margin-bottom:3em;">
-    <div class="col-sm-3">
-      
-    </div>
-    <div class="col-sm-6" style="background-color:#483D8B">
+    
+    <div class="col-sm-5" style="background-color:#483D8B">
+        <h1 class="text-center" style="font-weight:bold;font-family:Arial, Helvetica, sans-serif;color:#DCDCDC">Add new transport.</h1>
       <EditForm OnValidSubmit="@CreateNewAsync" Model="@TransportModel" >
           <div>
             <DataAnnotationsValidator />
@@ -61,13 +63,67 @@
         </div>
       </EditForm>
     </div>
-    <div class="col-sm-3">
-      
+    <div class="col-sm-1">
+
+    </div>
+    <div class="col-sm-6" style="background-color:#483D8B;">
+      <h1 class="text-center" style="font-weight:bold;font-family:Arial, Helvetica, sans-serif;color:#DCDCDC">Delete/Update transport.</h1>
+      <table class="table table-dark table-striped" id="deleteTable">
+          <thead>
+            <tr>
+                <th>#</th>
+                <th>Car brand</th>
+                <th>Car plate</th>
+                <th>Delete</th>
+                <th>Update</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(_transportState?.TransportDtos?.Count > 0)
+            {
+                int num = _number;
+                foreach (var dto in _transportState.TransportDtos)
+                {
+                    num += 1;
+                    <tr>
+                        <td>@num</td>
+                        <td>@dto.Name</td>
+                        <td>@dto.Number</td>
+                        <td>
+                            <button class="btn btn-danger" @onclick="() => DeleteAsync(dto)">Delete</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-warning" @onclick="() => UpdateAsync(dto)">Update</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+      </table>
+      <div>
+        <ul class="pagination">
+                @if(_links != null)
+                {
+                    @foreach (var link in _links)
+                    {
+                        <li @onclick="async() => await OnSelectedPage(link)" @onclick:preventDefault @onclick:stopPropagation
+                            style="cursor: pointer;" class="page-item @(link.Enabled ? null : "disabled")
+                            @(link.Active ? "active" : null)">
+                            <span class="page-link" href="#">@link.Text</span>
+                        </li>
+                    } 
+                }
+        </ul>
+    </div>
     </div>
   </div>
 </div>
 <ErrorModal CloseModal="@CloseErrorModal" ErrorText="@_errorText"></ErrorModal>
 <SaveModal CloseModal="@CloseSaveModal" SavedText="@_savedText"></SaveModal>
+<DeleteModal CloseModal="@CloseDeleteModal" PushOk="@DeleteInOkAsync"></DeleteModal> 
+
+
+
 <style>
     #buttonCreate {
         min-width: 200px;
@@ -92,7 +148,64 @@
 @code {
     private TransportModel TransportModel { get; set; } = new ();
     private string _errorText = "Quantity of axles or weight are incorrect!";
-    private string _savedText = "Transport has been created!";
+    private string _savedText = "Transport has been created!"; 
+
+    private int _number;
+    private JournalParameters _parameters = new JournalParameters();
+    private Metadata MetaData { get; set; } = new Metadata();
+    private List<PagingLink> _links{ get; set; } = new List<PagingLink>();
+    private int _spread = 2;
+
+    private TransportDto _transportDto;
+    private TransportDto TransportCascading { get; set; } = new TransportDto();
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _transportState.TotalTransportDtos = await _transportService.GetAllTransportsAsync();
+        await GetTransportsAsync();
+        CreatePaginationLinks();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _parameters.PageNumber = page;
+        await GetTransportsAsync();
+        StateHasChanged();
+    }
+
+    private void CreatePaginationLinks()
+    {
+        _links = new List<PagingLink>();
+        _links.Add(new PagingLink(MetaData.CurrentPage - 1, MetaData.HasPrevious, "Prev"));
+        for (int i = 1; i <= MetaData.TotalPages; i++)
+        {
+            if(i >= MetaData.CurrentPage - _spread && i <= MetaData.CurrentPage + _spread)
+            {
+                _links.Add(new PagingLink(i, true, i.ToString()) { Active = MetaData.CurrentPage == i });
+            }
+        }
+        _links.Add(new PagingLink(MetaData.CurrentPage + 1, MetaData.HasNext, "Next"));
+        _number = 8;
+        _number = _number * (MetaData.CurrentPage - 1);
+    }
+
+    private async Task OnSelectedPage(PagingLink link)
+    {
+        if (link.Page == MetaData.CurrentPage || !link.Enabled)
+            return;
+        MetaData.CurrentPage = link.Page;
+        await SelectedPage(link.Page);
+        CreatePaginationLinks();
+        StateHasChanged();
+    }
+
+    private async Task GetTransportsAsync()
+    {
+        var pagingResponse = await _transportService.GetAllAsync(_parameters);
+        _transportState.TransportDtos = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+    }
 
     private async Task CreateNewAsync()
     {
@@ -113,4 +226,30 @@
         await _jsRuntime.InvokeVoidAsync("hideError");
     }
 
+    private async Task CloseDeleteModal()
+    {
+        await _jsRuntime.InvokeVoidAsync("delhide");
+    }
+
+    public async Task DeleteAsync(TransportDto transportDto)
+    {
+        _transportDto = transportDto;
+        _transportDto.Cargo = string.Empty;
+        await _jsRuntime.InvokeVoidAsync("deltest");
+    } 
+
+    public async Task DeleteInOkAsync()
+    {
+        await _jsRuntime.InvokeVoidAsync("delhide");
+        await _transportService.DeleteAsync(_transportDto);
+        StateHasChanged();
+    }
+
+    public async Task UpdateAsync(TransportDto transportDto)
+    {
+        _updateState.TransportDto = transportDto;
+        await Task.CompletedTask;
+        _navigationManager.NavigateTo("/update");
+
+    }
 }

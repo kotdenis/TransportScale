@@ -58,6 +58,18 @@ namespace TransportScale.Core.Services.Implementation
             return dto;
         }
 
+        public async Task<TransportDto> GetRandomTransportAsync2(CancellationToken ct)
+        {
+            var entities = await _transportRepository.GetAllAsync(ct);
+            var quantities = await _quantityRepository.GetAllAsync(ct);
+            var quantity = quantities.Select(x => x.Quantity).FirstOrDefault();
+            var random = new Random();
+            var transportId = random.Next(quantity);
+            var entity = entities.Where(x => x.Id == transportId).FirstOrDefault();
+            var dto = _mapper.Map<TransportDto>(entity);
+            return dto;
+        }
+
         public async Task SaveTransportWeightAsync(JournalDto journalDto, CancellationToken ct)
         {
             ValidationResult valid = await _validatorJournal.ValidateAsync(journalDto, ct);
@@ -117,7 +129,7 @@ namespace TransportScale.Core.Services.Implementation
 
             if (result.IsValid)
             {
-                await _cacheManager.ClearlAsync("transport");
+                //await _cacheManager.ClearlAsync("transport");
                 var quantities = await _quantityRepository.GetAllAsync(ct);
                 var quantity = quantities.Select(x => x).FirstOrDefault();
                 quantity.Quantity = quantity.Quantity + 1;
@@ -127,6 +139,47 @@ namespace TransportScale.Core.Services.Implementation
                 return true;
             }
             return false;
+        }
+
+        public async Task<List<TransportDto>> GetAllAsync(CancellationToken ct)
+        {
+            var transports = await _transportRepository.GetAllAsync(ct);
+            var dtos = _mapper.ProjectTo<TransportDto>(transports.AsQueryable());
+            return dtos.ToList();
+        }
+
+        public async Task<PagedList<TransportDto>> GetAllTransportsPagedAsync(JournalParameters parameters, CancellationToken ct)
+        {
+            var transports = await _transportRepository.GetAllAsync(ct);
+            if (transports.Any())
+            {
+                var dtos = _mapper.ProjectTo<TransportDto>(transports.Where(x => x.IsDeleted == false).AsQueryable());
+                var list = dtos.ToList();
+                return PagedList<TransportDto>.ToPagedList(list, parameters.PageNumber, parameters.PageSize);
+            }
+            return null;
+        }
+
+        public async Task<bool> DeleteTransportAsync(TransportDto transportDto, CancellationToken ct)
+        {
+            var transports = await _transportRepository.GetAllAsync(ct);
+            var transport = transports.Where(x => x.Number == transportDto.Number).FirstOrDefault();
+            bool isDeleted = false;
+            if (transport != null)
+                isDeleted = await _transportRepository.SoftDeleteAsync(transport, ct);
+            return isDeleted;
+        }
+
+        public async Task UpdateAsync(TransportDto transportDto, CancellationToken ct)
+        {
+            var transports = await _transportRepository.GetAllAsync(ct);
+            var temp = transports.Where(x => x.Number == transportDto.Number).FirstOrDefault();
+            
+            if(temp != null)
+            {
+                var transport = _mapper.Map<Transport>(transportDto);
+                await _transportRepository.UpdateAsync(transport, ct);
+            }
         }
     }
 }

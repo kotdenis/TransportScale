@@ -24,17 +24,11 @@ namespace TransportScale.Core.Services.Implementation
 
         public async Task<IEnumerable<JournalDto>> GetJournalDtosAsync(CancellationToken ct)
         {
-            var key = "journal";
-            var result = await _cacheManager.GetAsync(key, async () =>
-            {
-                var journals = await _journalRepository.GetAllAsync(ct);
-                journals = journals.Where(x => x.IsDeleted == false).OrderByDescending(x => x.Created).ToList();
-                var dtos = _mapper.ProjectTo<JournalDto>(journals.AsQueryable());
-                var list = dtos.ToList();
-                return list;
-            });
-            var journalDtos = await result;
-            return journalDtos;
+            var journals = await _journalRepository.GetAllAsync(ct);
+            journals = journals.Where(x => x.IsDeleted == false).OrderByDescending(x => x.Created).ToList();
+            var dtos = _mapper.ProjectTo<JournalDto>(journals.AsQueryable());
+            var list = dtos.ToList();
+            return list;
         } 
 
         public async Task<PagedList<JournalDto>> GetPagedJournalDtosAsync(JournalParameters parameters, CancellationToken ct)

@@ -14,6 +14,8 @@ builder.Services.AddScoped<ITransportService, TransportService>();
 builder.Services.AddScoped<IJournalService, JournalService>();
 builder.Services.AddSingleton<ChartState>();
 builder.Services.AddSingleton<JournalState>();
+builder.Services.AddSingleton<TransportState>();
+builder.Services.AddScoped<UpdateState>();
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 

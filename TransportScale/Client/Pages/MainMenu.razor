@@ -60,9 +60,9 @@
 
     protected async override Task OnInitializedAsync()
     {
+
         chartState = new ChartState();
         StateHasChanged();
-
     }
 
     protected override async Task OnParametersSetAsync()
@@ -80,16 +80,20 @@
 
     private void CreatePaginationLinks()
     {
-        _links = new List<PagingLink>();
-        _links.Add(new PagingLink(MetaData.CurrentPage - 1, MetaData.HasPrevious, "Prev"));
-        for (int i = 1; i <= MetaData.TotalPages; i++)
+        if(journalState.JournalForDay != null && journalState.JournalForDay.Count > 0)
         {
-            if(i >= MetaData.CurrentPage - _spread && i <= MetaData.CurrentPage + _spread)
+            _links = new List<PagingLink>();
+            _links.Add(new PagingLink(MetaData.CurrentPage - 1, MetaData.HasPrevious, "Prev"));
+            for (int i = 1; i <= MetaData.TotalPages; i++)
             {
-                _links.Add(new PagingLink(i, true, i.ToString()) { Active = MetaData.CurrentPage == i });
+                if(i >= MetaData.CurrentPage - _spread && i <= MetaData.CurrentPage + _spread)
+                {
+                    _links.Add(new PagingLink(i, true, i.ToString()) { Active = MetaData.CurrentPage == i });
+                }
             }
+            _links.Add(new PagingLink(MetaData.CurrentPage + 1, MetaData.HasNext, "Next"));
         }
-        _links.Add(new PagingLink(MetaData.CurrentPage + 1, MetaData.HasNext, "Next"));
+
     }
 
     private async Task OnSelectedPage(PagingLink link)
@@ -114,13 +118,13 @@
     private async Task AcceptCarAsync()
     {
         _transportDto = await _transportService.GetRandomTransporAsync();
-        TotalWeight = _transportDto.Weight;
+        TotalWeight = _transportDto.Weight; 
         StateHasChanged();
     }
 
     private async Task BeginWeighingAsync()
     {
-        if(CurrentWeight == 0)
+        if(CurrentWeight == 0 && _transportDto.Name.Length > 0)
         {
             await _jsRuntime.InvokeVoidAsync("showDemo");
             _axisArray = new double[_transportDto.AxisNumber];
@@ -161,33 +165,35 @@
 
     private async Task SaveWeighingAsync()
     {
-        var journalDto = new JournalDto
+        if(CurrentWeight > 0)
         {
-            Cargo = _transportDto.Cargo,
-            Date = DateTime.UtcNow.ToShortDateString(),
-            Name = _transportDto.Name,
-            Number = _transportDto.Number,
-            Time = DateTime.UtcNow.ToShortTimeString(),
-            WeighinDate = DateTime.UtcNow,
-            Weight = TotalWeight
-        };
-        var isSaved = await _transportService.SaveWeightAsync(journalDto);
-        if (isSaved)
-        {
-            CurrentWeight = 0;
-            await _jsRuntime.InvokeVoidAsync("saveWeighing");
-            if (chartState.TransportBarConfig.Data.Datasets.Count > 0)
-                chartState.TransportBarConfig.Data.Datasets.Clear();
-            if (chartState.TransportBarConfig.Data.Labels.Count > 0)
-                chartState.TransportBarConfig.Data.Labels.Clear();
-            await GetForDayAsync();
-            StateHasChanged();
+            var journalDto = new JournalDto
+            {
+                Cargo = _transportDto.Cargo,
+                Date = DateTime.UtcNow.ToShortDateString(),
+                Name = _transportDto.Name,
+                Number = _transportDto.Number,
+                Time = DateTime.UtcNow.ToShortTimeString(),
+                WeighinDate = DateTime.UtcNow,
+                Weight = TotalWeight
+            };
+            var isSaved = await _transportService.SaveWeightAsync(journalDto);
+            if (isSaved)
+            {
+                CurrentWeight = 0;
+                await _jsRuntime.InvokeVoidAsync("saveWeighing");
+                if (chartState.TransportBarConfig.Data.Datasets.Count > 0)
+                    chartState.TransportBarConfig.Data.Datasets.Clear();
+                if (chartState.TransportBarConfig.Data.Labels.Count > 0)
+                    chartState.TransportBarConfig.Data.Labels.Clear();
+                await GetForDayAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await _jsRuntime.InvokeVoidAsync("errorShow");
+            }
         }
-        else
-        {
-            await _jsRuntime.InvokeVoidAsync("errorShow");
-        }
-
     }
 
     

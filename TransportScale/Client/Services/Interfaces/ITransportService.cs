@@ -11,5 +11,9 @@ namespace TransportScale.Client.Services.Interfaces
         Task<List<ForDayModel>> GetForDayModelsAsync();
         Task<PagingResponse<ForDayModel>> GetPagedForDayAsync(JournalParameters parameters);
         Task<bool> CreateNewTransportAsync(TransportModel transportModel);
+        Task<PagingResponse<TransportDto>> GetAllAsync(JournalParameters parameters);
+        Task<bool> DeleteAsync(TransportDto transportDto);
+        Task<List<TransportDto>> GetAllTransportsAsync();
+        Task UpdateAsync(TransportDto transportDto);
     }
 }

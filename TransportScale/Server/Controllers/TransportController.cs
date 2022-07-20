@@ -20,7 +20,7 @@ namespace TransportScale.Server.Controllers
         [HttpGet("random")]
         public async Task<ActionResult<TransportDto>> GetRandomTransport(CancellationToken ct = default)
         {
-            var randomTransport = await _transportService.GetRandomTransportAsync(ct);
+            var randomTransport = await _transportService.GetRandomTransportAsync2(ct);
             return Ok(randomTransport);
         }
 
@@ -57,6 +57,39 @@ namespace TransportScale.Server.Controllers
             var models = await _transportService.GetWeighingForDayAsync2(parameters, ct);
             Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(models.MetaData));
             return Ok(models);
+        }
+
+        [HttpGet("all")]
+        public async Task<ActionResult<PagedList<TransportDto>>> GetAll([FromQuery] JournalParameters parameters, CancellationToken ct = default)
+        {
+            parameters.PageSize = 8;
+            var transports = await _transportService.GetAllTransportsPagedAsync(parameters, ct);
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(transports.MetaData));
+            return Ok(transports);
+        }
+
+        [HttpDelete("soft")]
+        public async Task<ActionResult<bool>> Delete([FromBody] TransportDto transportDto, CancellationToken ct = default)
+        {
+            var isDeleted = await _transportService.DeleteTransportAsync(transportDto, ct);
+            if (isDeleted)
+                return Ok(true);
+            else
+                return BadRequest(false);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<TransportDto>>> GetTransportsTotal(CancellationToken ct = default)
+        {
+            var result = await _transportService.GetAllAsync(ct);
+            return Ok(result);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(TransportDto transportDto, CancellationToken ct = default)
+        {
+            await _transportService.UpdateAsync(transportDto, ct);
+            return Ok();
         }
     }
 }

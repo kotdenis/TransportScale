@@ -56,6 +56,6 @@ app.UseEndpoints(endpoints =>
     endpoints.MapFallbackToFile("index.html");
 });
 
-await SeedData.PopulateDb(builder);
+//await SeedData.PopulateDb(builder);
 
 app.Run();

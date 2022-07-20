@@ -6,7 +6,7 @@
    <nav class="nav-cont">
        <button class="navbut" @onclick="() => NavigateToMainMenu()" @onclick:preventDefault @onclick:stopPropagation>Main Menu</button>
        <button class="navbut" @onclick="() => NavigateToJournal()" @onclick:preventDefault @onclick:stopPropagation>Journal</button>
-       <button class="navbut" @onclick="() => NavigateToAdding()" @onclick:preventDefault @onclick:stopPropagation>Add New</button>
+       <button class="navbut" @onclick="() => NavigateToAdding()" @onclick:preventDefault @onclick:stopPropagation>Admin</button>
        <img src="@imageSource" style="float:right;margin-left:25em;margin-top:1em;" width="90" height="90"/>
    </nav>
 </div>
@@ -59,6 +59,8 @@
 
 
 @code {
+    //private string? imageSource = "https://denistransportscales.ru/Lorry_Green.png";
+    //private string footerImageSource = "https://denistransportscales.ru/Truck_Right_Green.png";
     private string? imageSource = "https://localhost:7257/Lorry_Green.png";
     private string footerImageSource = "https://localhost:7257/Truck_Right_Green.png";
 
